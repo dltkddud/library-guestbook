@@ -1,0 +1,171 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>태재디지털도서관의 미니홈피</title>
+
+  <!-- 검색엔진이 방명록 글을 색인하지 않도록 함.
+       (robots.txt로 크롤링 자체를 막으면 이 표시를 읽지 못해서, 크롤링은 허용하고 여기서 막음) -->
+  <meta name="robots" content="noindex, nofollow">
+
+  <!-- 픽셀 폰트 Galmuri: 외부 CDN이 느리거나 막혀도 글씨가 깨지지 않도록
+       assets/fonts/ 에 직접 넣고 style.css에서 불러옴 (OFL 1.1) -->
+
+  <!-- ?v= 는 캐시 버전 표시. 파일을 고쳐서 다시 올릴 때 이 숫자를 바꾸면
+       방문자 브라우저가 예전 파일을 쓰지 않고 새로 받아와. (index.html / app.js 두 곳) -->
+  <link rel="stylesheet" href="style.css?v=20261001">
+</head>
+<body>
+
+  <!-- ================= 1. 상단 바: 언어 선택 + BGM 플레이어 ================= -->
+  <header class="topbar">
+    <label class="lang">
+      <span class="sr-only" data-i18n="langLabel">언어</span>
+      <select id="lang-select">
+        <option value="ko">한국어</option>
+        <option value="en">English</option>
+      </select>
+    </label>
+
+    <!-- BGM: 저절로 흐르고 음량만 조절. 곡 목록은 config.js의 BGM에서 바꿔
+         (브라우저가 소리 자동재생을 막으면, 방문자가 화면을 처음 누를 때 시작됨) -->
+    <div class="bgm" id="bgm">
+      <span class="bgm-icon" id="bgm-icon" aria-hidden="true">♪</span>
+      <input type="range" class="bgm-volume" id="bgm-volume"
+             min="0" max="100" step="1" value="35" data-i18n-aria="bgmVolume">
+      <div class="bgm-title"><span id="bgm-title-text"></span></div>
+    </div>
+  </header>
+
+  <!-- 데모 모드 안내 (config.js에 API_URL을 넣기 전에만 보임) -->
+  <p class="demo-note" id="demo-note" hidden data-i18n="demoNote"></p>
+
+  <!-- ================= 2. 미니홈피 프레임 (보라 테두리 다이어리) ================= -->
+  <div class="frame">
+    <div class="frame-inner">
+
+      <!-- ---------- 2-1. 왼쪽: 방문자 수 + 프로필 ---------- -->
+      <aside class="side">
+        <p class="counter">TODAY <b class="today" id="today">-</b> <span aria-hidden="true">|</span> TOTAL <b id="total">-</b></p>
+
+        <section class="panel profile">
+          <figure class="polaroid" id="profile-figure">
+            <img id="profile-img" alt="" data-i18n-alt="profileAlt">
+          </figure>
+          <div class="profile-text">
+            <p class="mood">TODAY IS... <b data-i18n="mood"></b></p>
+            <div class="intro" id="intro"></div>
+            <p class="owner" data-i18n="ownerName"></p>
+            <!-- 파도타기: 새 홈페이지로 이동하는 메뉴 -->
+            <select class="wave" id="wave-select" data-i18n-aria="waveDefault">
+              <option value="" data-i18n="waveDefault"></option>
+              <option value="new" data-i18n="waveNew"></option>
+            </select>
+          </div>
+        </section>
+      </aside>
+
+      <!-- ---------- 2-2. 오른쪽: 제목 + 탭 + 내용 ---------- -->
+      <main class="main">
+        <h1 class="site-title" data-i18n="siteTitle"></h1>
+
+        <!-- 탭 메뉴: 넓은 화면에선 프레임 오른쪽 바깥에 세로로, 좁은 화면에선 내용 위에 가로로 -->
+        <nav class="tabs" role="tablist" data-i18n-aria="tabsLabel">
+          <button type="button" role="tab" id="tabbtn-home" data-tab="home" aria-controls="tab-home" data-i18n="tabHome"></button>
+          <button type="button" role="tab" id="tabbtn-diary" data-tab="diary" aria-controls="tab-diary" data-i18n="tabDiary"></button>
+          <button type="button" role="tab" id="tabbtn-album" data-tab="album" aria-controls="tab-album" data-i18n="tabAlbum"></button>
+          <button type="button" role="tab" id="tabbtn-guestbook" data-tab="guestbook" aria-controls="tab-guestbook" data-i18n="tabGuestbook"></button>
+        </nav>
+
+        <section class="panel content">
+
+          <!-- [홈] 미니룸 + 최근 방명록 + 일촌평 -->
+          <div role="tabpanel" id="tab-home" aria-labelledby="tabbtn-home">
+            <h2 class="sec-title" data-i18n="secMiniroom"></h2>
+            <!-- 미니룸: config.js의 MINIROOM_IMAGE 그림 위를 캐릭터가 돌아다님.
+                 MINIROOM_IMAGE가 비어 있으면 예전처럼 assets/miniroom.svg(코드로 그린 방)가 나옴.
+                 주소 뒤에 ?debug=1 을 붙이면 지점·길과 좌표 찍기 도구가 같이 나옴 -->
+            <div class="miniroom" id="miniroom"></div>
+
+            <div class="home-grid">
+              <section>
+                <h2 class="sec-title" data-i18n="secRecent"></h2>
+                <ul class="recent" id="recent-list"></ul>
+                <button type="button" class="link-btn" id="go-guestbook" data-i18n="seeAll"></button>
+              </section>
+              <section>
+                <h2 class="sec-title" data-i18n="secIlchon"></h2>
+                <ul class="ilchon" id="ilchon-list"></ul>
+              </section>
+            </div>
+          </div>
+
+          <!-- [다이어리] 작별 인사 본문 (내용은 config.js의 diaryBody) -->
+          <div role="tabpanel" id="tab-diary" aria-labelledby="tabbtn-diary" hidden>
+            <article class="diary">
+              <p class="diary-date" id="diary-date"></p>
+              <h2 class="diary-title" data-i18n="diaryTitle"></h2>
+              <div class="diary-body" id="diary-body"></div>
+              <!-- 다이어리 사진 (config.js의 DIARY_IMAGE). 경로가 비어 있거나 파일이 없으면 숨겨짐 -->
+              <figure class="diary-photo" id="diary-photo" hidden>
+                <img id="diary-img" alt="" data-i18n-alt="diaryPhotoAlt">
+                <figcaption data-i18n="diaryPhotoCaption"></figcaption>
+              </figure>
+              <p class="diary-sign" data-i18n="diarySign"></p>
+            </article>
+          </div>
+
+          <!-- [사진첩] 기존 홈페이지 스크린샷 (목록은 config.js의 PHOTOS) -->
+          <div role="tabpanel" id="tab-album" aria-labelledby="tabbtn-album" hidden>
+            <h2 class="sec-title" data-i18n="secAlbum"></h2>
+            <div class="album" id="album-grid"></div>
+          </div>
+
+          <!-- [방명록] 입력창 + 목록 -->
+          <div role="tabpanel" id="tab-guestbook" aria-labelledby="tabbtn-guestbook" hidden>
+            <h2 class="sec-title" data-i18n="secGuestbook"></h2>
+
+            <form class="gb-form" id="gb-form" novalidate>
+              <div class="gb-row">
+                <label for="gb-nick" data-i18n="nickLabel"></label>
+                <input id="gb-nick" type="text" autocomplete="off" data-i18n-placeholder="nickPlaceholder">
+                <span class="count" id="nick-count"></span>
+              </div>
+              <!-- 학번: 참여 확인과 본인 글 삭제용. 화면에도, 서버 응답(JSON)에도 절대 나오지 않음.
+                   autocomplete="off" + 브라우저 저장 안 함으로 기기에 남지 않게 함 -->
+              <div class="gb-row">
+                <label for="gb-sid" data-i18n="sidLabel"></label>
+                <input id="gb-sid" type="text" inputmode="numeric" autocomplete="off"
+                       data-i18n-placeholder="sidPlaceholder" aria-describedby="gb-sid-note">
+              </div>
+              <p class="gb-note" id="gb-sid-note" data-i18n="sidNote"></p>
+              <label class="sr-only" for="gb-msg" data-i18n="msgLabel"></label>
+              <textarea id="gb-msg" rows="3" data-i18n-placeholder="msgPlaceholder"></textarea>
+              <div class="gb-foot">
+                <span class="count" id="word-count"></span>
+                <span class="gb-status" id="gb-status" role="status"></span>
+                <button type="submit" class="btn" id="gb-submit" data-i18n="submit"></button>
+              </div>
+            </form>
+
+            <!-- 마감 후에만 보이는 안내 -->
+            <p class="gb-closed" id="gb-closed" hidden data-i18n="closed"></p>
+
+            <!-- 방명록 글 목록 (app.js가 채움) -->
+            <div class="gb-list" id="gb-list"></div>
+          </div>
+
+        </section>
+      </main>
+    </div>
+  </div>
+
+  <footer class="footer" data-i18n="footer"></footer>
+
+  <!-- 순서 중요: 설정(config.js)을 먼저 불러온 뒤 동작(app.js)
+       ?v= 를 바꾸면 방문자에게 새 파일이 전달됨 (위 style.css와 같은 숫자로 맞추기) -->
+  <script src="config.js?v=20261001"></script>
+  <script src="app.js?v=20261001"></script>
+</body>
+</html>

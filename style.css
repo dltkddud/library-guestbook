@@ -1,0 +1,754 @@
+/* =====================================================================
+   style.css : 미니홈피 디자인
+   ---------------------------------------------------------------------
+   색 원칙: 학교 상징색(보라 #501D83, 청록 #00A597)은 원색 그대로 쓰면 쨍해서
+            "넓은 면은 연한 톤, 테두리·탭·버튼 같은 포인트에만 원색"으로 씀.
+   글꼴: Galmuri(픽셀 폰트). 픽셀 폰트는 정해진 크기에서 가장 선명해서
+         Galmuri11=12px, Galmuri9=10px, Galmuri14=15px로만 씀.
+   구성 순서: 1.색·글꼴 변수 → 2.기본 → 3.상단 바 → 4.프레임 → 5.프로필
+             → 6.탭 → 7.내용 패널 → 8.방명록 → 9.좁은 화면(모바일)
+   ===================================================================== */
+
+/* ---------- 0. 글꼴 (Galmuri, SIL Open Font License 1.1) ----------
+   예전에는 외부 CDN에서 불러왔는데, CDN이 느리거나 막히는 곳(사내망·일부 인앱 브라우저)에서는
+   도트 글씨가 안 나와서 assets/fonts/ 에 직접 넣고 여기서 불러오도록 바꿨어.
+   실제로 쓰는 4가지만 넣었어: Galmuri11(보통/굵게), Galmuri9, Galmuri14.
+   Copyright (c) 2019-2025 Lee Minseo (quiple@quiple.dev), Reserved Font Name "Galmuri".
+   라이선스 전문: assets/fonts/OFL.md
+   ---------------------------------------------------------------- */
+@font-face {
+  font-family: "Galmuri11";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;   /* 글꼴을 받는 동안에도 기본 글씨로 먼저 보여줌 (화면이 비지 않게) */
+  src: url("assets/fonts/Galmuri11.woff2") format("woff2");
+}
+@font-face {
+  font-family: "Galmuri11";
+  font-style: normal;
+  font-weight: 700;     /* <b>, 소제목에 쓰임 */
+  font-display: swap;
+  src: url("assets/fonts/Galmuri11-Bold.woff2") format("woff2");
+}
+@font-face {
+  font-family: "Galmuri9";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("assets/fonts/Galmuri9.woff2") format("woff2");
+}
+@font-face {
+  font-family: "Galmuri14";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("assets/fonts/Galmuri14.woff2") format("woff2");
+}
+
+/* ---------- 1. 색·글꼴 변수 (여기만 바꾸면 전체 색이 바뀜) ---------- */
+:root {
+  --purple: #501D83;       /* 학교 보라 (원색) */
+  --purple-deep: #3B1563;  /* 보라 그림자·외곽선 */
+  --teal: #00A597;         /* 학교 청록 (원색) */
+  --teal-text: #00776D;    /* 흰 바탕 위 글자용 청록 (원색은 글자로 쓰면 흐려서 더 진하게) */
+  --lavender: #EFE9F6;     /* 연보라: 넓은 면 */
+  --lavender-2: #E2D8EF;
+  --mint: #E3F5F2;         /* 연청록: 방명록 입력칸 */
+  --page: #EAE3F3;         /* 페이지 바탕 */
+  --paper: #FFFFFF;
+  --ink: #2B1840;          /* 본문 글자 (보라빛 검정) */
+  --muted: #6E6280;        /* 보조 글자 */
+  --line: #CDBFE0;         /* 테두리선 */
+  --today: #E0443E;        /* TODAY 숫자 (싸이월드식 빨강 포인트) */
+
+  --font: "Galmuri11", "Apple SD Gothic Neo", "Malgun Gothic", "Dotum", sans-serif;
+  --font-small: "Galmuri9", "Apple SD Gothic Neo", "Malgun Gothic", "Dotum", sans-serif;
+  --font-title: "Galmuri14", "Apple SD Gothic Neo", "Malgun Gothic", "Dotum", sans-serif;
+
+  color-scheme: light;
+}
+
+/* ---------- 2. 기본 ---------- */
+*, *::before, *::after { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  padding: 0 0 32px;
+  font-family: var(--font);
+  font-size: 12px;
+  line-height: 1.7;
+  color: var(--ink);
+  background-color: var(--page);
+  /* 바탕의 작은 점무늬 (미니홈피 스킨 느낌) */
+  background-image: radial-gradient(#D6C9E8 1px, transparent 1px);
+  background-size: 12px 12px;
+}
+
+p { margin: 0; }
+button, input, select, textarea { font: inherit; color: inherit; }
+img { max-width: 100%; display: block; }
+
+/* 키보드로 이동할 때 보이는 포커스 표시 (접근성) */
+:focus-visible { outline: 2px solid var(--teal); outline-offset: 2px; }
+
+/* 화면엔 안 보이고 스크린리더만 읽는 글자 */
+.sr-only {
+  position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0;
+  overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0;
+}
+
+/* ---------- 3. 상단 바: 언어 선택 + BGM ---------- */
+.topbar {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 16px 12px 8px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.lang select {
+  font-family: var(--font-small);
+  font-size: 10px;
+  padding: 3px 6px;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  background: var(--paper);
+}
+
+.bgm {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  padding: 4px 6px;
+  background: var(--paper);
+  border: 2px solid var(--purple);
+  border-radius: 6px;
+  box-shadow: 0 2px 0 var(--purple-deep);
+}
+.bgm[hidden] { display: none; }
+
+/* 음표 아이콘 + 음량 슬라이더 (재생·다음곡 버튼 없이 음량만 조절) */
+.bgm-icon { color: var(--purple); line-height: 1; }
+.bgm-volume {
+  width: 78px;
+  height: 18px;
+  margin: 0 2px;
+  accent-color: var(--purple);
+  cursor: pointer;
+}
+.bgm-volume:disabled { opacity: 0.4; cursor: default; }
+
+/* 곡 제목이 오른쪽에서 왼쪽으로 흐르는 전광판 */
+.bgm-title {
+  width: 190px;
+  overflow: hidden;
+  white-space: nowrap;
+  font-family: var(--font-small);
+  font-size: 10px;
+  color: var(--muted);
+  margin-left: 4px;
+}
+.bgm-title span {
+  display: inline-block;
+  padding-left: 100%;
+  animation: marquee 14s linear infinite;
+}
+@keyframes marquee { to { transform: translateX(-100%); } }
+
+/* 움직임 줄이기 설정을 켠 사람에겐 흐르지 않게 */
+@media (prefers-reduced-motion: reduce) {
+  .bgm-title span { animation: none; padding-left: 0; }
+  .bgm-title { text-overflow: ellipsis; }
+}
+
+.demo-note {
+  max-width: 876px;
+  margin: 0 auto 10px;
+  padding: 6px 10px;
+  font-family: var(--font-small);
+  font-size: 10px;
+  background: #FFF6D6;
+  border: 1px dashed #E4B84A;
+  border-radius: 4px;
+}
+.demo-note[hidden] { display: none; }
+
+/* ---------- 4. 프레임: 보라 테두리 + 점선 안쪽 (다이어리 모양) ---------- */
+.frame {
+  position: relative;          /* 탭이 이 프레임 오른쪽 바깥에 붙도록 기준점 */
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 10px;
+  background: var(--purple);
+  border-radius: 16px;
+  box-shadow: 0 3px 0 var(--purple-deep);
+}
+
+.frame-inner {
+  display: grid;
+  grid-template-columns: 210px 1fr;   /* 왼쪽 프로필 / 오른쪽 내용 */
+  gap: 12px;
+  padding: 12px;
+  background: #F7F3FB;
+  border: 2px dashed #B8A3D4;
+  border-radius: 10px;
+}
+
+/* 그리드 칸이 긴 글 때문에 옆으로 늘어나지 않게 (모바일에서 화면 밖으로 삐져나오는 문제 방지) */
+.side, .main, .home-grid > section { min-width: 0; }
+
+.panel {
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+}
+
+/* ---------- 5. 왼쪽: 방문자 수 + 프로필 ---------- */
+.counter {
+  font-family: var(--font-small);
+  font-size: 10px;
+  color: var(--muted);
+  margin: 0 0 6px 2px;
+  height: 20px;
+}
+.counter b { color: var(--ink); }
+.counter b.today { color: var(--today); }
+
+.profile { padding: 12px; }
+
+/* 프로필 사진: 살짝 기울어진 폴라로이드 */
+.polaroid {
+  margin: 4px 4px 14px;
+  padding: 6px 6px 20px;
+  background: var(--paper);
+  border: 1px solid var(--line);
+  transform: rotate(-2deg);
+  box-shadow: 3px 3px 0 var(--lavender-2);
+}
+.polaroid img,
+.polaroid .ph {
+  width: 100%;
+  aspect-ratio: 1;
+  object-fit: cover;
+}
+/* 사진 파일이 없을 때 자리 표시 (빗금 무늬) */
+.ph {
+  display: grid;
+  place-items: center;
+  font-family: var(--font-small);
+  font-size: 10px;
+  color: var(--muted);
+  background: repeating-linear-gradient(45deg, var(--lavender), var(--lavender) 6px, #F7F3FB 6px, #F7F3FB 12px);
+}
+
+.mood {
+  font-family: var(--font-small);
+  font-size: 10px;
+  color: var(--muted);
+}
+.mood b { color: var(--purple); font-family: var(--font); font-size: 12px; }
+
+.intro {
+  margin: 8px 0;
+  padding: 8px 0;
+  border-top: 1px dotted var(--line);
+  border-bottom: 1px dotted var(--line);
+}
+
+.owner {
+  font-family: var(--font-small);
+  font-size: 10px;
+  color: var(--muted);
+  margin-bottom: 8px;
+}
+
+.wave {
+  width: 100%;
+  padding: 3px 4px;
+  font-family: var(--font-small);
+  font-size: 10px;
+  background: var(--lavender);
+  border: 1px solid var(--line);
+  border-radius: 3px;
+  cursor: pointer;
+}
+
+/* ---------- 6. 탭: 넓은 화면에선 프레임 오른쪽 바깥에 세로로 붙음 ---------- */
+.site-title {
+  margin: 0 0 6px 2px;
+  height: 20px;
+  font-family: var(--font-title);
+  font-size: 15px;
+  font-weight: 400;
+  line-height: 20px;
+  color: var(--purple);
+}
+
+.tabs {
+  position: absolute;
+  top: 56px;
+  left: 100%;          /* 프레임의 오른쪽 끝 바깥 */
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.tabs [role="tab"] {
+  min-width: 64px;
+  padding: 6px 10px 6px 8px;
+  text-align: left;
+  color: var(--paper);
+  background: var(--teal);
+  border: 2px solid var(--purple-deep);
+  border-left: none;
+  border-radius: 0 6px 6px 0;
+  cursor: pointer;
+}
+.tabs [role="tab"]:hover { background: #00B5A6; }
+.tabs [role="tab"][aria-selected="true"] {
+  color: var(--purple);
+  background: var(--paper);
+}
+
+/* ---------- 7. 내용 패널 ---------- */
+.content {
+  min-height: 560px;
+  padding: 14px 16px 18px;
+}
+
+.sec-title {
+  margin: 0 0 8px;
+  padding-bottom: 4px;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--purple);
+  border-bottom: 1px dotted var(--line);
+}
+
+/* 미니룸: 방 그림 한 장 + 그 위를 돌아다니는 캐릭터 */
+.miniroom {
+  position: relative;
+  margin-bottom: 16px;
+  background: #FBF9FE;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  overflow: hidden;
+  /* aspect-ratio는 2021년 이후 브라우저에만 있어서, 그 전 기기(iOS 14 이하 등)에서는
+     미니룸 높이가 0이 돼 그림이 통째로 사라져. 그래서 먼저 padding 비율로 높이를 만들어 둠.
+     3:2 → 세로가 가로의 2/3 = 66.667% */
+  height: 0;
+  padding-top: 66.667%;
+}
+/* 예전 SVG 방을 쓸 때만 옛 비율로 (360:252 = 70%) */
+.miniroom.is-svg { padding-top: 70%; }
+
+/* aspect-ratio를 아는 요즘 브라우저에서는 그 방식으로 되돌림 (더 정확함) */
+@supports (aspect-ratio: 3 / 2) {
+  .miniroom { height: auto; padding-top: 0; aspect-ratio: 3 / 2; }
+  .miniroom.is-svg { aspect-ratio: 360 / 252; }
+}
+
+/* 그림과 캐릭터 무대는 미니룸 칸을 꽉 채움 (위의 두 방식 모두에서 똑같이 동작) */
+.miniroom-stage,
+.miniroom-svg {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+}
+.miniroom-svg { display: block; }
+.miniroom-img { width: 100%; height: 100%; display: block; object-fit: cover; }
+
+/* 캐릭터: 위치·크기를 모두 방 그림 기준 %로 잡아서, 화면이 커지면 같이 커짐.
+   left/top은 "발이 닿는 자리"이고, transform으로 아래 가운데를 그 점에 맞춤. */
+.minimi {
+  position: absolute;
+  width: auto;
+  max-width: none;
+  cursor: pointer;
+  user-select: none;
+  -webkit-user-drag: none;
+}
+
+/* 발밑 그림자 */
+.minimi-shadow {
+  position: absolute;
+  aspect-ratio: 3.4 / 1;
+  transform: translate(-50%, -50%);
+  background: radial-gradient(ellipse at center, rgba(45, 24, 70, 0.3), rgba(45, 24, 70, 0) 70%);
+  pointer-events: none;
+}
+
+/* 캐릭터를 눌렀을 때 머리 위에 뜨는 말풍선 */
+.minimi-bubble {
+  position: absolute;
+  transform: translate(-50%, -100%);
+  max-width: 46%;
+  padding: 5px 8px;
+  font-family: var(--font-small);
+  font-size: 10px;
+  line-height: 1.5;
+  text-align: center;
+  color: var(--ink);
+  background: var(--paper);
+  border: 2px solid var(--purple);
+  border-radius: 8px;
+  box-shadow: 0 2px 0 var(--purple-deep);
+  pointer-events: none;
+}
+.minimi-bubble[hidden] { display: none; }
+/* 말풍선 꼬리 */
+.minimi-bubble::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  bottom: -6px;
+  width: 8px;
+  height: 8px;
+  margin-left: -4px;
+  background: var(--paper);
+  border-right: 2px solid var(--purple);
+  border-bottom: 2px solid var(--purple);
+  transform: rotate(45deg);
+}
+
+/* ?debug=1 일 때만 보이는 위치 조정 도구 (지점·길 표시 + 좌표 찍기) */
+.minimi-debug {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+.minimi-debug line {
+  stroke: var(--teal);
+  stroke-width: 2;
+  stroke-dasharray: 6 4;
+  vector-effect: non-scaling-stroke;
+}
+.minimi-debug-dot {
+  position: absolute;
+  width: 18px;
+  height: 18px;
+  margin: -9px 0 0 -9px;
+  display: grid;
+  place-items: center;
+  font-family: var(--font-small);
+  font-size: 10px;
+  color: var(--paper);
+  background: rgba(224, 68, 62, 0.9);
+  border: 1px solid var(--paper);
+  border-radius: 50%;
+  pointer-events: none;
+}
+.minimi-debug-readout {
+  position: absolute;
+  left: 6px;
+  top: 6px;
+  padding: 3px 6px;
+  font-family: var(--font-small);
+  font-size: 10px;
+  color: var(--paper);
+  background: rgba(43, 24, 64, 0.85);
+  border-radius: 3px;
+  pointer-events: none;
+}
+
+.home-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+.recent, .ilchon { list-style: none; margin: 0; padding: 0; }
+.recent li {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;   /* 긴 글은 ...으로 줄임 */
+  padding: 3px 0;
+  border-bottom: 1px dotted var(--lavender-2);
+}
+.recent li b { margin-right: 6px; }
+.recent-empty { color: var(--muted); }
+.ilchon li { padding: 3px 0; border-bottom: 1px dotted var(--lavender-2); }
+.ilchon-from { color: var(--teal-text); margin-right: 6px; }
+.ilchon-from::after { content: " :"; }
+
+.link-btn {
+  margin-top: 6px;
+  padding: 0;
+  font-family: var(--font-small);
+  font-size: 10px;
+  color: var(--teal-text);
+  background: none;
+  border: none;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+/* 다이어리 */
+.diary { max-width: 34em; }
+.diary-date { font-family: var(--font-small); font-size: 10px; color: var(--muted); }
+.diary-title { margin: 2px 0 12px; font-size: 12px; font-weight: 700; color: var(--purple); }
+.diary-body p { margin-bottom: 10px; line-height: 1.9; }
+.diary-sign { margin-top: 16px; text-align: right; color: var(--muted); }
+
+/* 다이어리에 붙이는 사진 (폴라로이드처럼) */
+.diary-photo {
+  margin: 16px 0 0;
+  padding: 6px 6px 8px;
+  background: var(--paper);
+  border: 1px solid var(--line);
+  box-shadow: 3px 3px 0 var(--lavender-2);
+}
+.diary-photo[hidden] { display: none; }
+.diary-photo img { width: 100%; }
+.diary-photo figcaption {
+  margin-top: 6px;
+  font-family: var(--font-small);
+  font-size: 10px;
+  line-height: 1.6;
+  color: var(--muted);
+}
+
+/* 사진첩 */
+.album {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 14px;
+}
+.photo {
+  margin: 0;
+  padding: 5px 5px 8px;
+  background: var(--paper);
+  border: 1px solid var(--line);
+}
+/* 홈페이지 스크린샷은 가로로 길어서, 잘라내지 않고 전체가 보이게 contain으로 */
+.photo img { width: 100%; aspect-ratio: 16 / 10; object-fit: contain; background: var(--lavender); }
+.photo .ph { width: 100%; aspect-ratio: 16 / 10; object-fit: cover; }
+.photo figcaption { margin-top: 6px; }
+
+/* ---------- 8. 방명록 ---------- */
+.gb-form {
+  padding: 10px;
+  background: var(--mint);
+  border: 1px solid #A9DDD5;
+  border-radius: 6px;
+}
+.gb-form[hidden] { display: none; }
+
+.gb-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+.gb-row label { flex: none; color: var(--teal-text); }
+
+.gb-form input,
+.gb-form textarea {
+  padding: 6px 8px;
+  background: var(--paper);
+  border: 1px solid #9FCFC8;
+  border-radius: 3px;
+}
+.gb-form input { width: 160px; }
+/* 학번 입력칸: 숫자 몇 자리뿐이라 닉네임보다 짧게 */
+#gb-sid { width: 120px; }
+
+/* 입력칸 아래 작은 안내문 (학번이 공개되지 않는다는 설명) */
+.gb-note {
+  margin: -2px 0 8px;
+  font-family: var(--font-small);
+  font-size: 10px;
+  line-height: 1.6;
+  color: var(--teal-text);
+}
+.gb-form textarea {
+  width: 100%;
+  resize: vertical;
+  line-height: 1.7;
+}
+
+.gb-foot {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 6px;
+}
+
+.count { font-family: var(--font-small); font-size: 10px; color: var(--muted); }
+.count.over { color: var(--today); }
+
+.gb-status { flex: 1; font-family: var(--font-small); font-size: 10px; }
+.gb-status.ok { color: var(--teal-text); }
+.gb-status.error { color: #C0392B; }
+
+.btn {
+  padding: 5px 16px;
+  color: var(--paper);
+  background: var(--purple);
+  border: none;
+  border-radius: 4px;
+  box-shadow: 0 2px 0 var(--purple-deep);
+  cursor: pointer;
+}
+.btn:active { transform: translateY(1px); box-shadow: 0 1px 0 var(--purple-deep); }
+.btn:disabled { opacity: 0.6; cursor: wait; }
+
+.gb-closed {
+  padding: 10px;
+  text-align: center;
+  background: var(--lavender);
+  border: 1px dashed var(--line);
+  border-radius: 6px;
+}
+.gb-closed[hidden] { display: none; }
+
+.gb-notice { margin-top: 16px; color: var(--muted); text-align: center; }
+/* 불러오기에 실패했을 때 나오는 '다시 시도' 버튼 */
+.gb-retry { margin-top: 10px; text-align: center; }
+
+/* 방명록 글 하나 */
+.entry {
+  margin-top: 12px;
+  border: 1px solid var(--line);
+}
+.entry-head {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  padding: 3px 8px;
+  font-family: var(--font-small);
+  font-size: 10px;
+  color: var(--muted);
+  background: var(--lavender);
+  border-bottom: 1px solid var(--line);
+}
+.entry-nick { font-family: var(--font); font-size: 12px; color: var(--ink); }
+.entry-time { margin-left: auto; }
+
+/* 글마다 붙는 작은 '삭제' 버튼 */
+.entry-del {
+  padding: 0 2px;
+  font-family: var(--font-small);
+  font-size: 10px;
+  color: var(--muted);
+  background: none;
+  border: none;
+  text-decoration: underline;
+  cursor: pointer;
+}
+.entry-del:hover { color: var(--today); }
+
+/* '삭제'를 누르면 글 안에서 펼쳐지는 학번 확인칸 (브라우저 기본 prompt 창 대신) */
+.entry-del-box {
+  padding: 8px 10px 10px;
+  background: var(--lavender);
+  border-top: 1px dashed var(--line);
+}
+.entry-del-box[hidden] { display: none; }
+
+.entry-del-label {
+  display: block;
+  margin-bottom: 4px;
+  font-family: var(--font-small);
+  font-size: 10px;
+  color: var(--muted);
+}
+.entry-del-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.entry-del-row input {
+  width: 110px;
+  padding: 4px 6px;
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: 3px;
+}
+.entry-del-box .gb-status { display: block; margin-top: 5px; }
+
+/* 작은 버튼 (삭제 확인용) */
+.btn-sm { padding: 3px 10px; font-family: var(--font-small); font-size: 10px; }
+
+.entry-body {
+  display: flex;
+  gap: 12px;
+  padding: 10px;
+}
+.entry-msg {
+  white-space: pre-wrap;      /* 줄바꿈 그대로 보여주기 */
+  overflow-wrap: anywhere;    /* 아주 긴 단어도 칸 밖으로 안 넘치게 */
+}
+
+/* 닉네임별 색이 다른 작은 책 아이콘 */
+.avatar {
+  position: relative;
+  flex: none;
+  width: 26px;
+  height: 32px;
+  background: var(--c, var(--purple));
+  border: 2px solid var(--ink);
+  border-radius: 2px 4px 4px 2px;
+  box-shadow: inset 5px 0 0 rgba(0, 0, 0, 0.2);
+}
+.avatar::after {
+  content: "";
+  position: absolute;
+  top: 5px; bottom: 5px; right: 3px;
+  width: 2px;
+  background: rgba(255, 255, 255, 0.7);
+}
+
+.footer {
+  margin-top: 16px;
+  text-align: center;
+  font-family: var(--font-small);
+  font-size: 10px;
+  color: var(--muted);
+}
+
+/* ---------- 9. 좁은 화면 ---------- */
+
+/* 화면이 프레임+탭보다 좁으면: 탭을 내용 위 가로줄로 옮김 */
+@media (max-width: 1040px) {
+  .frame { margin: 0 12px; }
+  .tabs {
+    position: static;
+    flex-direction: row;
+    overflow-x: auto;
+    margin-bottom: -1px;   /* 탭 아래선을 패널 테두리와 겹치게 */
+  }
+  .tabs [role="tab"] {
+    min-width: 0;
+    padding: 4px 12px;
+    text-align: center;
+    border: 1px solid var(--line);
+    border-bottom: none;
+    border-radius: 6px 6px 0 0;
+  }
+  .tabs [role="tab"][aria-selected="true"] { background: var(--paper); }
+  .content { border-top-left-radius: 0; }
+}
+
+/* 모바일: 프로필을 위로, 사진은 왼쪽 작게 */
+@media (max-width: 680px) {
+  .topbar { flex-wrap: wrap; }
+  .bgm-title { width: 130px; }
+  .frame { margin: 0 8px; padding: 6px; border-radius: 12px; }
+  .frame-inner { grid-template-columns: 1fr; padding: 8px; }
+  .profile {
+    display: grid;
+    grid-template-columns: 96px 1fr;
+    gap: 12px;
+    align-items: start;
+  }
+  .polaroid { margin: 4px 0 0; padding: 4px 4px 12px; }
+  .intro { margin: 6px 0; padding: 6px 0; }
+  .content { min-height: 0; padding: 12px; }
+  .home-grid { grid-template-columns: 1fr; }
+  .gb-form input { flex: 1; width: auto; min-width: 0; }
+  /* 작은 화면에선 긴 글을 한 단계 큰 픽셀 폰트로 (읽기 편하게) */
+  .diary-body p, .entry-msg { font-family: var(--font-title); font-size: 15px; line-height: 1.7; }
+}

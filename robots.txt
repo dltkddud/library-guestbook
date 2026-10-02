@@ -1,0 +1,5 @@
+# 방명록 글이 검색 결과에 뜨지 않게 하려는 거라서,
+# 크롤링 자체는 막지 않고 index.html의 <meta name="robots" content="noindex">로 막는다.
+# (여기서 Disallow로 막아버리면 검색엔진이 그 noindex 표시를 아예 읽지 못함)
+User-agent: *
+Allow: /
