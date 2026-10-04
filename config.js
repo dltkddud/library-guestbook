@@ -137,10 +137,10 @@ const TEXT = {
     mood: '시원섭섭',
     intro: [
       '너희의 새벽 3시 검색창을 기억해...★',
-      '이제 후배한테 자리 물려주고 쉬러 간다.',
-      '그동안 고마웠어 ♡',
+      '도서관 홈페이지는 더 쓰기 편하고 예쁘게 바뀔 거야.',
+      '새로운 홈페이지도 잘 부탁해 ♡',
     ],
-    ownerName: '태재디지털도서관 (2023 ~ 2026)',
+    ownerName: '태재디지털도서관 홈페이지 since 2023',
     waveDefault: '파도타기',
     waveNew: '새 도서관 홈페이지',
 
@@ -266,10 +266,10 @@ const TEXT = {
     mood: 'bittersweet',
     intro: [
       'I remember your 3 a.m. searches...★',
-      'Time to hand things over to my successor and rest.',
-      'Thank you for everything ♡',
+      'The library homepage is getting easier to use and prettier.',
+      'Please welcome the new homepage too ♡',
     ],
-    ownerName: 'Taejae Digital Library (2023 ~ 2026)',
+    ownerName: 'Taejae Digital Library homepage, since 2023',
     waveDefault: 'Surf to...',
     waveNew: 'The new library homepage',
 
