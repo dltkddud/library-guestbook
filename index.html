@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>태재디지털도서관의 미니홈피</title>
+  <title>태재디지털도서관의 홈피</title>
 
   <meta name="description" content="2023~2026 고마웠어! 기존 홈페이지에게 마지막 인사를 남겨주세요">
 
@@ -12,24 +12,26 @@
        ※ og:image와 og:url은 반드시 "https://"로 시작하는 전체 주소여야 해.
          "assets/og-image.png" 같은 상대 경로는 메신저가 못 읽어서 그림이 안 떠.
        ※ GitHub 저장소 이름을 바꾸면 아래 주소 3곳(og:url, og:image, twitter:image)도
-         같이 고쳐야 해. -->
+         같이 고쳐야 해.
+       ※ 그림 주소 뒤의 ?v=2 는 그림을 새로 만들었다는 표시. 메신저가 예전 그림을 기억하고 있어도
+         주소가 달라져서 새 그림을 다시 읽어 가. 그림을 또 바꾸면 두 곳 다 숫자를 올려줘. -->
   <meta property="og:type" content="website">
-  <meta property="og:site_name" content="태재디지털도서관의 미니홈피">
+  <meta property="og:site_name" content="태재디지털도서관의 홈피">
   <meta property="og:locale" content="ko_KR">
   <meta property="og:url" content="https://dltkddud.github.io/library-guestbook/">
-  <meta property="og:title" content="태재디지털도서관의 미니홈피">
+  <meta property="og:title" content="태재디지털도서관의 홈피">
   <meta property="og:description" content="2023~2026 고마웠어! 기존 홈페이지에게 마지막 인사를 남겨주세요">
-  <meta property="og:image" content="https://dltkddud.github.io/library-guestbook/assets/og-image.png">
+  <meta property="og:image" content="https://dltkddud.github.io/library-guestbook/assets/og-image.png?v=2">
   <meta property="og:image:type" content="image/png">
   <meta property="og:image:width" content="1200">
   <meta property="og:image:height" content="630">
-  <meta property="og:image:alt" content="도서관 미니룸에서 손을 흔드는 캐릭터">
+  <meta property="og:image:alt" content="도서관 내 방에서 손을 흔드는 캐릭터">
 
   <!-- X(트위터) 카드: 큰 그림으로 보이게 -->
   <meta name="twitter:card" content="summary_large_image">
-  <meta name="twitter:title" content="태재디지털도서관의 미니홈피">
+  <meta name="twitter:title" content="태재디지털도서관의 홈피">
   <meta name="twitter:description" content="2023~2026 고마웠어! 기존 홈페이지에게 마지막 인사를 남겨주세요">
-  <meta name="twitter:image" content="https://dltkddud.github.io/library-guestbook/assets/og-image.png">
+  <meta name="twitter:image" content="https://dltkddud.github.io/library-guestbook/assets/og-image.png?v=2">
 
   <!-- 검색엔진이 방명록 글을 색인하지 않도록 함.
        (이건 검색엔진용이라, 카톡·페북의 미리보기 수집기와는 상관없이 카드는 정상적으로 떠)
@@ -41,7 +43,7 @@
 
   <!-- ?v= 는 캐시 버전 표시. 파일을 고쳐서 다시 올릴 때 이 숫자를 바꾸면
        방문자 브라우저가 예전 파일을 쓰지 않고 새로 받아와. (index.html / app.js 두 곳) -->
-  <link rel="stylesheet" href="style.css?v=20261004">
+  <link rel="stylesheet" href="style.css?v=20261011c">
 </head>
 <body>
 
@@ -68,7 +70,7 @@
   <!-- 데모 모드 안내 (config.js에 API_URL을 넣기 전에만 보임) -->
   <p class="demo-note" id="demo-note" hidden data-i18n="demoNote"></p>
 
-  <!-- ================= 2. 미니홈피 프레임 (보라 테두리 다이어리) ================= -->
+  <!-- ================= 2. 홈피 프레임 (보라 테두리 다이어리) ================= -->
   <div class="frame">
     <div class="frame-inner">
 
@@ -84,7 +86,7 @@
             <p class="mood">TODAY IS... <b data-i18n="mood"></b></p>
             <div class="intro" id="intro"></div>
             <p class="owner" data-i18n="ownerName"></p>
-            <!-- 파도타기: 새 홈페이지로 이동하는 메뉴 -->
+            <!-- 놀러가기: 새 홈페이지로 이동하는 메뉴 -->
             <select class="wave" id="wave-select" data-i18n-aria="waveDefault">
               <option value="" data-i18n="waveDefault"></option>
               <option value="new" data-i18n="waveNew"></option>
@@ -107,10 +109,10 @@
 
         <section class="panel content">
 
-          <!-- [홈] 미니룸 + 최근 방명록 + 일촌평 -->
+          <!-- [홈] 내 방 + 최근 방명록 + 친구들의 한마디 -->
           <div role="tabpanel" id="tab-home" aria-labelledby="tabbtn-home">
             <h2 class="sec-title" data-i18n="secMiniroom"></h2>
-            <!-- 미니룸: config.js의 MINIROOM_IMAGE 그림 위를 캐릭터가 돌아다님.
+            <!-- 내 방: config.js의 MINIROOM_IMAGE 그림 위를 캐릭터가 돌아다님.
                  MINIROOM_IMAGE가 비어 있으면 예전처럼 assets/miniroom.svg(코드로 그린 방)가 나옴.
                  주소 뒤에 ?debug=1 을 붙이면 지점·길과 좌표 찍기 도구가 같이 나옴 -->
             <div class="miniroom" id="miniroom"></div>
@@ -128,25 +130,16 @@
             </div>
           </div>
 
-          <!-- [다이어리] 작별 인사 본문 (내용은 config.js의 diaryBody) -->
+          <!-- [다이어리] 일기 여러 편 (내용은 config.js의 DIARIES).
+               app.js가 일기마다 날짜·제목·본문·사진·서명 상자를 만들고, 사이에 구분선을 넣음 -->
           <div role="tabpanel" id="tab-diary" aria-labelledby="tabbtn-diary" hidden>
-            <article class="diary">
-              <p class="diary-date" id="diary-date"></p>
-              <h2 class="diary-title" data-i18n="diaryTitle"></h2>
-              <div class="diary-body" id="diary-body"></div>
-              <!-- 다이어리 사진 (config.js의 DIARY_IMAGE). 경로가 비어 있거나 파일이 없으면 숨겨짐 -->
-              <figure class="diary-photo" id="diary-photo" hidden>
-                <img id="diary-img" alt="" data-i18n-alt="diaryPhotoAlt">
-                <figcaption data-i18n="diaryPhotoCaption"></figcaption>
-              </figure>
-              <p class="diary-sign" data-i18n="diarySign"></p>
-            </article>
+            <div class="diary-list" id="diary-list"></div>
           </div>
 
-          <!-- [사진첩] 기존 홈페이지 스크린샷 (목록은 config.js의 PHOTOS) -->
+          <!-- [사진첩] 사진 묶음 여러 개 (목록은 config.js의 ALBUMS).
+               app.js가 묶음마다 제목 + 사진 칸을 만들어 넣음 -->
           <div role="tabpanel" id="tab-album" aria-labelledby="tabbtn-album" hidden>
-            <h2 class="sec-title" data-i18n="secAlbum"></h2>
-            <div class="album" id="album-grid"></div>
+            <div id="album-list"></div>
           </div>
 
           <!-- [방명록] 입력창 + 목록 -->
@@ -192,7 +185,7 @@
 
   <!-- 순서 중요: 설정(config.js)을 먼저 불러온 뒤 동작(app.js)
        ?v= 를 바꾸면 방문자에게 새 파일이 전달됨 (위 style.css와 같은 숫자로 맞추기) -->
-  <script src="config.js?v=20261004"></script>
-  <script src="app.js?v=20261004"></script>
+  <script src="config.js?v=20261011c"></script>
+  <script src="app.js?v=20261011c"></script>
 </body>
 </html>

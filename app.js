@@ -1,12 +1,12 @@
 /* =====================================================================
-   app.js : 미니홈피의 "동작"을 담당하는 파일
+   app.js : 홈피의 "동작"을 담당하는 파일
    ---------------------------------------------------------------------
    구성
      0. 공통 도구        : 자주 쓰는 작은 함수들
      1. 언어(한/영)      : 선택한 언어의 문구를 화면에 채움
      2. 탭               : 홈 / 다이어리 / 사진첩 / 방명록 전환
      3. 프로필·사진첩    : 이미지 표시, 파일이 없을 때 대체 처리
-     3-2. 미니룸        : 방 그림 위를 캐릭터가 지점 사이로 걸어다님
+     3-2. 내 방         : 방 그림 위를 캐릭터가 지점 사이로 걸어다님
      4. 서버 통신        : 방명록 불러오기(GET), 남기기(POST)
      5. 방명록 화면      : 목록 그리기, 입력 검사, 등록, 본인 글 삭제
      6. BGM             : 저절로 흐르고 음량만 조절, 곡이 끝나면 다음 곡
@@ -70,13 +70,84 @@
     set(store, key, value) { try { window[store].setItem(key, value); } catch { /* 무시 */ } },
   };
 
+  /* ---------- 0-2. 따봉(공감) 도트 아이콘 ----------
+     12x12칸 도트 그림. O = 테두리, F = 속(누르면 보라색으로 채워짐), . = 빈칸.
+     그림을 고치고 싶으면 이 글자 지도만 바꾸면 돼 (줄마다 12글자 유지). */
+  const THUMB_MAP = [
+    '....OO......',
+    '...OFO......',
+    '...OFO......',
+    '..OFFO......',
+    '.OFFFOOOOOO.',
+    'OOFFFFFFFFFO',
+    'OFOFFFFFFOO.',
+    'OFOFFFFFFFFO',
+    'OFOFFFFFFOO.',
+    'OFOFFFFFFFO.',
+    'OOOFFFFFFOO.',
+    '..OOOOOOOO..',
+  ];
+
+  // 글자 지도에서 같은 글자가 가로로 이어진 칸들을 SVG 사각형 경로로 바꿈
+  function thumbPath(letter) {
+    let d = '';
+    THUMB_MAP.forEach((row, y) => {
+      for (let x = 0; x < row.length; x += 1) {
+        if (row[x] !== letter) continue;
+        let len = 1;
+        while (row[x + len] === letter) len += 1;
+        d += `M${x} ${y}h${len}v1h-${len}z`;
+        x += len - 1;
+      }
+    });
+    return d;
+  }
+  const THUMB_LINE = thumbPath('O');
+  const THUMB_FILL = thumbPath('F');
+
+  // 따봉 아이콘 <svg> 하나 만들기. 색은 style.css가 정함(.thumb-line 테두리 / .thumb-fill 속).
+  // 그림일 뿐이라 화면 읽기 프로그램에는 숨김(aria-hidden). 뜻은 버튼의 '공감' 글자로 전달.
+  function thumbIcon(extraClass) {
+    const NS = 'http://www.w3.org/2000/svg';
+    const svg = document.createElementNS(NS, 'svg');
+    svg.setAttribute('class', extraClass ? `thumb ${extraClass}` : 'thumb');
+    svg.setAttribute('viewBox', '0 0 12 12');
+    svg.setAttribute('aria-hidden', 'true');
+    svg.setAttribute('focusable', 'false');
+    svg.setAttribute('shape-rendering', 'crispEdges');   // 도트 경계를 또렷하게
+    [['thumb-fill', THUMB_FILL], ['thumb-line', THUMB_LINE]].forEach(([cls, d]) => {
+      const path = document.createElementNS(NS, 'path');
+      path.setAttribute('class', cls);
+      path.setAttribute('d', d);
+      svg.append(path);
+    });
+    return svg;
+  }
+
+  /* ---------- 0-3. 내가 공감한 글 기억하기 ----------
+     누른 글 번호를 localStorage('gb-liked')에 [3, 7, 12] 같은 목록으로 저장.
+     저장소를 못 쓰는 브라우저(일부 인앱 브라우저·개인정보 보호 모드)에서는
+     이 화면을 보는 동안만 기억하고, 오류 없이 그대로 동작함. */
+  const liked = (() => {
+    const set = new Set();
+    try {
+      const saved = JSON.parse(storage.get('localStorage', 'gb-liked') || '[]');
+      if (Array.isArray(saved)) saved.forEach((no) => { if (Number.isInteger(no)) set.add(no); });
+    } catch { /* 저장된 값이 깨져 있으면 빈 목록으로 시작 */ }
+    const save = () => storage.set('localStorage', 'gb-liked', JSON.stringify(Array.from(set)));
+    return {
+      has: (no) => set.has(no),
+      set(no, on) { if (on) set.add(no); else set.delete(no); save(); },
+    };
+  })();
+
   // API_URL을 아직 안 넣었으면 데모 모드 (가짜 데이터로 화면만 확인)
   const DEMO = !/^https:\/\//.test(CONFIG.API_URL || '');
 
   // 마감 여부. 마감 뒤에는 새 글 등록도, 본인 글 삭제도 막음 (서버에서도 똑같이 막음)
   const isClosed = () => Date.now() > new Date(CONFIG.END_DATE).getTime();
 
-  // 주소 뒤에 ?debug=1 을 붙이면 미니룸 위치 조정 도구가 켜짐
+  // 주소 뒤에 ?debug=1 을 붙이면 내 방 캐릭터 위치 조정 도구가 켜짐
   const DEBUG = new URLSearchParams(location.search).get('debug') === '1';
   // 기기에서 '움직임 줄이기'를 켠 사람에겐 캐릭터를 움직이지 않음
   const REDUCE_MOTION = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -189,18 +260,11 @@
     });
     img.src = CONFIG.PROFILE_IMAGE;
 
-    // 다이어리 사진: 경로가 있으면 보여주고, 파일이 없으면 칸째로 숨김
-    const diaryFigure = $('#diary-photo');
-    const diaryImg = $('#diary-img');
-    if (CONFIG.DIARY_IMAGE) {
-      diaryImg.addEventListener('load', () => { diaryFigure.hidden = false; });
-      diaryImg.addEventListener('error', () => { diaryFigure.hidden = true; });
-      diaryImg.src = CONFIG.DIARY_IMAGE;
-    }
+    // (다이어리 사진은 일기마다 따로 붙어서 renderDiary()에서 처리)
 
     loadMiniroom();
 
-    // 파도타기: '새 도서관 홈페이지'를 고르면 새 탭으로 이동
+    // 놀러가기: '새 도서관 홈페이지'를 고르면 새 탭으로 이동
     const wave = $('#wave-select');
     const newOption = wave.querySelector('option[value="new"]');
     if (!CONFIG.NEW_HOMEPAGE_URL) newOption.disabled = true;
@@ -212,7 +276,7 @@
     });
   }
 
-  // 미니룸 그리기
+  // 내 방 그리기
   //  - MINIROOM_IMAGE가 있으면: 그 그림을 깔고 그 위에 캐릭터를 올림
   //  - 없으면: assets/miniroom.svg(코드로 그린 도트 방)를 예전처럼 불러와 넣음
   async function loadMiniroom() {
@@ -235,11 +299,11 @@
       box.innerHTML = await res.text(); // 우리 사이트의 고정 파일이라 그대로 넣어도 안전
       box.querySelectorAll('[data-i18n]').forEach((node) => { node.textContent = t(node.dataset.i18n); });
     } catch (err) {
-      console.error('미니룸 불러오기 실패 (Live Server로 열었는지 확인):', err);
+      console.error('내 방 그림 불러오기 실패 (Live Server로 열었는지 확인):', err);
     }
   }
 
-  /* ---------- 3-2. 미니룸 캐릭터 ----------
+  /* ---------- 3-2. 내 방 캐릭터 ----------
      config.js의 MINIMI.spots(머무는 지점)와 MINIMI.paths(오갈 수 있는 길)만 보고 움직여.
      위치·크기는 모두 방 그림 기준 %라서, 화면이 커지면 캐릭터도 같이 커져. */
 
@@ -485,7 +549,7 @@
       const y = ((e.clientY - rect.top) / rect.height) * 100;
       const text = `x: ${x.toFixed(1)}, y: ${y.toFixed(1)}`;
       readout.textContent = text;
-      console.log('[미니룸 좌표]', text);
+      console.log('[내 방 좌표]', text);
     });
   }
 
@@ -494,42 +558,116 @@
     box.replaceChildren(...t('intro').map((line) => el('p', '', line)));
   }
 
+  // 친구들의 한마디: config.js의 한마디(ilchon) + 공감 많은 방명록 글을 번갈아 섞어서 보여줌.
+  // 인기 글 = 공감 POPULAR_MIN_LIKES개 이상인 글 중 많은 순 POPULAR_COUNT개 (같으면 최근 글 먼저)
+  function popularEntries() {
+    const min = Number(CONFIG.POPULAR_MIN_LIKES) || 2;
+    const howMany = Number(CONFIG.POPULAR_COUNT) || 2;
+    return state.entries
+      .filter((entry) => (entry.likes || 0) >= min)
+      .sort((a, b) => (b.likes - a.likes) || (b.no - a.no))
+      .slice(0, howMany);
+  }
+
   function renderIlchon() {
     const list = $('#ilchon-list');
-    list.replaceChildren(...t('ilchon').map((item) => {
+    const friends = t('ilchon').map((item) => {
       const li = el('li');
       li.append(el('b', 'ilchon-from', item.from), el('span', '', item.text));
       return li;
-    }));
-  }
-
-  function renderDiary() {
-    $('#diary-date').textContent = CONFIG.DIARY_DATE;
-    $('#diary-body').replaceChildren(...t('diaryBody').map((para) => el('p', '', para)));
-  }
-
-  function renderPhotos() {
-    const grid = $('#album-grid');
-    grid.replaceChildren();
-    CONFIG.PHOTOS.forEach((photo) => {
-      const caption = photo[state.lang] || photo.ko;
-      const fig = el('figure', 'photo');
-      const img = el('img');
-      img.loading = 'lazy';
-      img.alt = caption;
-      // 사진 파일이 없을 때: 데모 모드에선 자리 표시, 실제 사이트에선 그 칸을 아예 숨김
-      img.addEventListener('error', () => {
-        if (DEMO) {
-          fig.classList.add('missing');
-          img.replaceWith(el('div', 'ph', t('photoMissing')));
-        } else {
-          fig.remove();
-        }
-      });
-      img.src = photo.src;
-      fig.append(img, el('figcaption', '', caption));
-      grid.append(fig);
     });
+    // 인기 글 한 줄: "닉네임 [따봉]5 : 메시지" (길면 두 줄까지만 보이고 ...으로 줄임, style.css)
+    const popular = popularEntries().map((entry) => {
+      const li = el('li', 'ilchon-pop');
+      const clamp = el('span', 'ilchon-clamp');   // 두 줄 자르기는 이 안쪽 칸에 적용
+      const badge = el('span', 'ilchon-likes');
+      badge.append(thumbIcon('on'), el('span', 'sr-only', t('like')), String(entry.likes));
+      clamp.append(el('b', 'ilchon-from', entry.nickname), badge, el('span', '', entry.message));
+      li.append(clamp);
+      return li;
+    });
+    // 한마디 1 → 인기 글 1 → 한마디 2 → 인기 글 2 ... 순서로 섞음 (남는 쪽은 뒤에 이어 붙임)
+    const mixed = [];
+    for (let i = 0; i < Math.max(friends.length, popular.length); i += 1) {
+      if (friends[i]) mixed.push(friends[i]);
+      if (popular[i]) mixed.push(popular[i]);
+    }
+    list.replaceChildren(...mixed);
+  }
+
+  // 다이어리: config.js의 DIARIES 배열을 적힌 순서대로(맨 앞 = 맨 위) 그림.
+  // 일기 사이에는 구분선(hr)을 넣어서 한 편 한 편이 확실히 나뉘어 보이게 함.
+  function renderDiary() {
+    const list = $('#diary-list');
+    const nodes = [];
+    (CONFIG.DIARIES || []).forEach((diary, i) => {
+      // 지금 언어의 내용. 영어 칸이 비어 있으면 한국어로 대신 보여줌
+      const ko = diary.ko || {};
+      const cur = diary[state.lang] || {};
+      const pick = (key) => (cur[key] !== undefined && cur[key] !== '' ? cur[key] : ko[key]);
+
+      if (i > 0) nodes.push(el('hr', 'diary-divider'));
+
+      const article = el('article', 'diary');
+      article.append(el('p', 'diary-date', diary.date || ''), el('h2', 'diary-title', pick('title') || ''));
+
+      const body = el('div', 'diary-body');
+      body.append(...(pick('body') || []).map((para) => el('p', '', para)));
+      article.append(body);
+
+      // 사진: image가 있을 때만. 다 불러온 뒤에 보이고, 파일이 없으면 칸째로 숨김
+      if (diary.image) {
+        const fig = el('figure', 'diary-photo');
+        fig.hidden = true;
+        const img = el('img');
+        img.alt = pick('photoAlt') || '';
+        img.addEventListener('load', () => { fig.hidden = false; });
+        img.addEventListener('error', () => { fig.hidden = true; });
+        img.src = diary.image;
+        fig.append(img);
+        if (pick('photoCaption')) fig.append(el('figcaption', '', pick('photoCaption')));
+        article.append(fig);
+      }
+
+      if (pick('sign')) article.append(el('p', 'diary-sign', pick('sign')));
+      nodes.push(article);
+    });
+    list.replaceChildren(...nodes);
+  }
+
+  // 사진첩: config.js의 ALBUMS 묶음마다 제목(h2) + 사진 칸(grid)을 만들어 차례로 넣음
+  function renderPhotos() {
+    const list = $('#album-list');
+    list.replaceChildren();
+    (CONFIG.ALBUMS || []).forEach((album) => {
+      const section = el('section', 'album-section');
+      const title = album.title || {};
+      const grid = el('div', 'album');
+      section.append(el('h2', 'sec-title', title[state.lang] || title.ko || ''), grid);
+      list.append(section);
+      (album.photos || []).forEach((photo) => grid.append(makePhoto(photo)));
+    });
+  }
+
+  // 사진 한 장(사진 + 아래 설명)을 만듦
+  function makePhoto(photo) {
+    const caption = photo[state.lang] || photo.ko;
+    const fig = el('figure', 'photo');
+    const img = el('img');
+    img.loading = 'lazy';
+    img.alt = caption;
+    // 사진 파일이 없을 때: 데모 모드에선 자리 표시, 실제 사이트에선 그 칸을 아예 숨김
+    img.addEventListener('error', () => {
+      if (DEMO) {
+        fig.classList.add('missing');
+        img.replaceWith(el('div', 'ph', t('photoMissing')));
+      } else {
+        fig.remove();
+      }
+    });
+    img.src = photo.src;
+    fig.append(img, el('figcaption', '', caption));
+    return fig;
   }
 
   /* ---------- 4. 서버 통신 ---------- */
@@ -537,9 +675,9 @@
   // 데모 모드에서 쓰는 가짜 방명록 (실제 사이트에선 안 쓰임)
   // studentId는 데모(가짜) 값이라 공개돼도 상관없어. 실제 모드에선 브라우저로 내려오지 않아.
   const demoEntries = [
-    { no: 1, nickname: '도서관러버', message: '그동안 고마웠어! 과제할 때마다 신세 많이 졌어 ㅠㅠ', createdAt: '2026-10-05T09:12:00+09:00', studentId: '1111111' },
-    { no: 2, nickname: 'Alex', message: 'Thanks for all the late-night searches. See you on the new site!', createdAt: '2026-10-05T11:40:00+09:00', studentId: '2222222' },
-    { no: 3, nickname: '새내기', message: '새 홈페이지도 기대할게요 ★', createdAt: '2026-10-05T13:05:00+09:00', studentId: '3333333' },
+    { no: 1, nickname: '도서관러버', message: '그동안 고마웠어! 과제할 때마다 신세 많이 졌어 ㅠㅠ', createdAt: '2026-10-05T09:12:00+09:00', studentId: '1111111', likes: 5 },
+    { no: 2, nickname: 'Alex', message: 'Thanks for all the late-night searches. See you on the new site!', createdAt: '2026-10-05T11:40:00+09:00', studentId: '2222222', likes: 2 },
+    { no: 3, nickname: '새내기', message: '새 홈페이지도 기대할게요 ★', createdAt: '2026-10-05T13:05:00+09:00', studentId: '3333333', likes: 0 },
   ];
 
   // 서버가 끝내 응답하지 않으면 화면이 '불러오는 중...'에서 영영 멈춰버려.
@@ -573,7 +711,7 @@
       // 실제 서버와 똑같이: 삭제된 글은 빼고, 학번은 아예 담지 않고 돌려줌
       const visible = demoEntries
         .filter((entry) => !entry.deleted)
-        .map(({ no, nickname, message, createdAt }) => ({ no, nickname, message, createdAt }));
+        .map(({ no, nickname, message, createdAt, likes }) => ({ no, nickname, message, createdAt, likes }));
       return { ok: true, entries: visible.reverse(), today: 1, total: 1 };
     }
     const url = new URL(CONFIG.API_URL);
@@ -588,7 +726,7 @@
   // 학번(studentId)은 서버로만 보내고, 응답에도 화면에도 다시 나오지 않음
   async function sendEntry(nickname, studentId, message) {
     if (DEMO) {
-      demoEntries.push({ no: demoEntries.length + 1, nickname, message, createdAt: new Date().toISOString(), studentId });
+      demoEntries.push({ no: demoEntries.length + 1, nickname, message, createdAt: new Date().toISOString(), studentId, likes: 0 });
       return { ok: true };
     }
     return fetchJson(CONFIG.API_URL, {
@@ -613,6 +751,20 @@
     }, TIMEOUT_POST);
   }
 
+  // POST: 공감 누르기(delta=1) / 취소(delta=-1). 성공하면 서버가 바뀐 공감 수(likes)를 돌려줌
+  async function sendLike(no, delta) {
+    if (DEMO) {
+      const target = demoEntries.find((entry) => entry.no === no);
+      if (!target || target.deleted) return { ok: false, error: 'LIKE_GONE' };
+      target.likes = Math.max(0, (target.likes || 0) + delta);
+      return { ok: true, likes: target.likes };
+    }
+    return fetchJson(CONFIG.API_URL, {
+      method: 'POST',
+      body: JSON.stringify({ action: 'like', no, delta }),
+    }, TIMEOUT_POST);
+  }
+
   async function loadEntries(countVisit) {
     try {
       const data = await fetchEntries(countVisit);
@@ -629,6 +781,7 @@
     state.loading = false;
     renderEntries();
     renderStats();
+    renderIlchon();   // 공감 많은 글을 '친구들의 한마디'에 섞어야 해서 목록을 받은 뒤 다시 그림
   }
 
   /* ---------- 5. 방명록 화면 ---------- */
@@ -731,7 +884,73 @@
     return button;
   }
 
-  // 방명록 글 하나를 미니홈피 스타일 상자로 만듦
+  // 공감 요청을 보내는 중인 글 번호 (응답이 오기 전에 또 누르면 무시해서 숫자가 꼬이지 않게)
+  const likePending = new Set();
+  const LIKE_ERRORS = ['LIKE_LIMIT', 'LIKE_GONE'];
+
+  // 글 하나에 붙는 따봉 버튼 + 공감 수 + 짧은 안내줄.
+  // 누르면 서버 응답을 기다리지 않고 바로 화면을 바꾸고(낙관적 반영), 실패하면 원래대로 되돌림.
+  function likeControl(entry) {
+    const box = el('div', 'entry-like');
+    const status = el('span', 'like-status');
+    status.setAttribute('role', 'status');     // 실패 안내를 화면 읽기 프로그램도 읽어줌
+
+    const button = el('button', 'like-btn');
+    button.type = 'button';
+    const count = el('span', 'like-count');
+    // 버튼 이름은 "공감 3"처럼 읽힘: 숨긴 '공감' 글자 + 보이는 숫자 (그림은 aria-hidden)
+    button.append(thumbIcon(), el('span', 'sr-only', t('like')), count);
+    box.append(status, button);
+
+    let statusTimer = 0;
+    function paint() {
+      const on = liked.has(entry.no);
+      button.setAttribute('aria-pressed', on ? 'true' : 'false');
+      count.textContent = String(entry.likes || 0);
+    }
+    function say(message) {
+      status.textContent = message;
+      clearTimeout(statusTimer);
+      statusTimer = setTimeout(() => { status.textContent = ''; }, 3500);   // 잠깐 보였다가 사라짐
+    }
+
+    button.addEventListener('click', async () => {
+      if (likePending.has(entry.no)) return;
+      const wasOn = liked.has(entry.no);
+      const delta = wasOn ? -1 : 1;              // 이미 눌렀으면 취소
+      const before = entry.likes || 0;
+
+      // 1) 화면에 바로 반영
+      likePending.add(entry.no);
+      liked.set(entry.no, !wasOn);
+      entry.likes = Math.max(0, before + delta);
+      status.textContent = '';
+      paint();
+      renderIlchon();
+
+      try {
+        // 2) 서버에 보내고, 서버가 알려준 진짜 숫자로 맞춤 (그사이 다른 사람이 누른 것까지 반영)
+        const data = await sendLike(entry.no, delta);
+        if (!data.ok) throw new Error(data.error || 'SERVER');
+        if (Number.isFinite(data.likes)) entry.likes = data.likes;
+      } catch (err) {
+        // 3) 실패하면 원래대로 되돌리고 짧게 안내
+        console.error('공감 반영 실패:', err);
+        liked.set(entry.no, wasOn);
+        entry.likes = before;
+        say(t(`err_${LIKE_ERRORS.includes(err.message) ? err.message : 'LIKE_FAIL'}`));
+      } finally {
+        likePending.delete(entry.no);
+        paint();
+        renderIlchon();
+      }
+    });
+
+    paint();
+    return box;
+  }
+
+  // 방명록 글 하나를 홈피 스타일 상자로 만듦
   function entryElement(entry) {
     const article = el('article', 'entry');
 
@@ -745,7 +964,7 @@
     const avatar = el('span', 'avatar');
     avatar.setAttribute('aria-hidden', 'true');
     avatar.style.setProperty('--c', colorFor(entry.nickname));
-    body.append(avatar, el('p', 'entry-msg', entry.message));
+    body.append(avatar, el('p', 'entry-msg', entry.message), likeControl(entry));
 
     article.append(head, body);
     // 마감 전에만 '삭제'를 붙임 (마감 뒤에는 서버에서도 삭제를 거절함)
@@ -879,7 +1098,7 @@
   }
 
   /* ---------- 6. BGM (음량만 조절) ----------
-     싸이월드 미니홈피처럼 들어오면 저절로 흐르게 하되, 방문자는 음량만 조절해.
+     옛날 개인 홈피처럼 들어오면 저절로 흐르게 하되, 방문자는 음량만 조절해.
      요즘 브라우저는 소리 자동재생을 막기 때문에, 막히면 조용히 기다렸다가
      방문자가 화면을 처음 누르는 순간 재생을 시작해. */
 

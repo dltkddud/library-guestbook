@@ -1,5 +1,5 @@
 /* =====================================================================
-   style.css : 미니홈피 디자인
+   style.css : 홈피 디자인
    ---------------------------------------------------------------------
    색 원칙: 학교 상징색(보라 #501D83, 청록 #00A597)은 원색 그대로 쓰면 쨍해서
             "넓은 면은 연한 톤, 테두리·탭·버튼 같은 포인트에만 원색"으로 씀.
@@ -59,7 +59,7 @@
   --ink: #2B1840;          /* 본문 글자 (보라빛 검정) */
   --muted: #6E6280;        /* 보조 글자 */
   --line: #CDBFE0;         /* 테두리선 */
-  --today: #E0443E;        /* TODAY 숫자 (싸이월드식 빨강 포인트) */
+  --today: #E0443E;        /* TODAY 숫자 (빨강 포인트) */
 
   --font: "Galmuri11", "Apple SD Gothic Neo", "Malgun Gothic", "Dotum", sans-serif;
   --font-small: "Galmuri9", "Apple SD Gothic Neo", "Malgun Gothic", "Dotum", sans-serif;
@@ -79,7 +79,7 @@ body {
   line-height: 1.7;
   color: var(--ink);
   background-color: var(--page);
-  /* 바탕의 작은 점무늬 (미니홈피 스킨 느낌) */
+  /* 바탕의 작은 점무늬 (옛날 홈피 스킨 느낌) */
   background-image: radial-gradient(#D6C9E8 1px, transparent 1px);
   background-size: 12px 12px;
 }
@@ -327,7 +327,7 @@ img { max-width: 100%; display: block; }
   border-bottom: 1px dotted var(--line);
 }
 
-/* 미니룸: 방 그림 한 장 + 그 위를 돌아다니는 캐릭터 */
+/* 내 방: 방 그림 한 장 + 그 위를 돌아다니는 캐릭터 */
 .miniroom {
   position: relative;
   margin-bottom: 16px;
@@ -336,7 +336,7 @@ img { max-width: 100%; display: block; }
   border-radius: 4px;
   overflow: hidden;
   /* aspect-ratio는 2021년 이후 브라우저에만 있어서, 그 전 기기(iOS 14 이하 등)에서는
-     미니룸 높이가 0이 돼 그림이 통째로 사라져. 그래서 먼저 padding 비율로 높이를 만들어 둠.
+     내 방 칸 높이가 0이 돼 그림이 통째로 사라져. 그래서 먼저 padding 비율로 높이를 만들어 둠.
      3:2 → 세로가 가로의 2/3 = 66.667% */
   height: 0;
   padding-top: 66.667%;
@@ -350,7 +350,7 @@ img { max-width: 100%; display: block; }
   .miniroom.is-svg { aspect-ratio: 360 / 252; }
 }
 
-/* 그림과 캐릭터 무대는 미니룸 칸을 꽉 채움 (위의 두 방식 모두에서 똑같이 동작) */
+/* 그림과 캐릭터 무대는 내 방 칸을 꽉 채움 (위의 두 방식 모두에서 똑같이 동작) */
 .miniroom-stage,
 .miniroom-svg {
   position: absolute;
@@ -477,6 +477,22 @@ img { max-width: 100%; display: block; }
 .ilchon-from { color: var(--teal-text); margin-right: 6px; }
 .ilchon-from::after { content: " :"; }
 
+/* 한마디에 섞이는 인기 방명록 글: "닉네임 [따봉]5 : 메시지" */
+.ilchon-pop .ilchon-from { margin-right: 4px; }
+.ilchon-pop .ilchon-from::after { content: none; }      /* 콜론은 공감 수 뒤에 붙임 */
+.ilchon-likes { margin-right: 6px; color: var(--purple); white-space: nowrap; }
+.ilchon-likes::after { content: " :"; color: var(--teal-text); }
+.ilchon-likes .thumb { margin-right: 2px; vertical-align: -1px; }
+/* 메시지가 길면 두 줄까지만 보이고 나머지는 ...으로 */
+.ilchon-clamp {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  overflow: hidden;
+  overflow-wrap: anywhere;
+}
+
 .link-btn {
   margin-top: 6px;
   padding: 0;
@@ -495,6 +511,15 @@ img { max-width: 100%; display: block; }
 .diary-title { margin: 2px 0 12px; font-size: 12px; font-weight: 700; color: var(--purple); }
 .diary-body p { margin-bottom: 10px; line-height: 1.9; }
 .diary-sign { margin-top: 16px; text-align: right; color: var(--muted); }
+
+/* 일기와 일기 사이 구분선: 연보라 점선 (일기가 여러 편일 때 app.js가 사이사이에 넣음) */
+.diary-divider {
+  max-width: 34em;
+  height: 0;
+  margin: 28px 0;
+  border: 0;
+  border-top: 2px dashed var(--line);
+}
 
 /* 다이어리에 붙이는 사진 (폴라로이드처럼) */
 .diary-photo {
@@ -515,6 +540,8 @@ img { max-width: 100%; display: block; }
 }
 
 /* 사진첩 */
+/* 묶음과 묶음 사이 간격 (두 번째 묶음부터 위쪽을 띄움) */
+.album-section + .album-section { margin-top: 28px; }
 .album {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
@@ -678,9 +705,57 @@ img { max-width: 100%; display: block; }
   padding: 10px;
 }
 .entry-msg {
+  flex: 1;                    /* 남는 폭을 다 쓰고, 따봉 버튼은 오른쪽 끝으로 */
+  min-width: 0;
   white-space: pre-wrap;      /* 줄바꿈 그대로 보여주기 */
   overflow-wrap: anywhere;    /* 아주 긴 단어도 칸 밖으로 안 넘치게 */
 }
+
+/* ---------- 공감(따봉) ----------
+   도트 아이콘 색: 안 누르면 테두리만(회보라), 누르면 속까지 학교 보라(#501D83)로 채움 */
+.thumb { width: 12px; height: 12px; flex: none; }
+.thumb-line { fill: var(--muted); }
+.thumb-fill { fill: transparent; }
+.thumb.on .thumb-line,
+.like-btn[aria-pressed="true"] .thumb-line { fill: var(--purple-deep); }
+.thumb.on .thumb-fill,
+.like-btn[aria-pressed="true"] .thumb-fill { fill: var(--purple); }
+
+/* 글 오른쪽 아래: (실패 안내) + [따봉 숫자] */
+.entry-like {
+  flex: none;
+  align-self: flex-end;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 3px;
+}
+.like-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 6px;
+  font-family: var(--font-small);
+  font-size: 10px;
+  line-height: 1;
+  color: var(--muted);
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: 3px;
+  cursor: pointer;
+}
+.like-btn:hover { border-color: var(--purple); }
+.like-btn:active .thumb { transform: translateY(1px); }
+.like-btn[aria-pressed="true"] { color: var(--purple); border-color: var(--purple); background: var(--lavender); }
+.like-status {
+  max-width: 12em;
+  font-family: var(--font-small);
+  font-size: 10px;
+  line-height: 1.4;
+  text-align: right;
+  color: #C0392B;
+}
+.like-status:empty { display: none; }
 
 /* 닉네임별 색이 다른 작은 책 아이콘 */
 .avatar {

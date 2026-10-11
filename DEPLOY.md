@@ -11,7 +11,7 @@
 3. **1행에 아래 제목을 그대로** 넣어. A1 칸을 클릭하고 붙여넣으면 한 번에 들어가:
 
    ```
-   timestamp	nickname	message	visible	studentId	deletedAt
+   timestamp	nickname	message	visible	studentId	deletedAt	likes
    ```
 
    | 열 | 이름 | 내용 |
@@ -22,6 +22,7 @@
    | D | visible | 체크박스. **체크를 풀면 사이트에서 사라짐** |
    | E | studentId | 학번. **사이트에는 절대 안 나옴** (관리자인 나만 봄) |
    | F | deletedAt | 본인이 지운 시각 (자동) |
+   | G | likes | 공감(따봉) 수 (자동). 비어 있으면 0으로 봄 |
 
 4. 1행을 고정해두면 보기 편해: 1행 선택 → 보기 → 고정 → 행 1개까지
 
@@ -84,6 +85,9 @@ API_URL: 'https://script.google.com/macros/s/여기에_복사한_주소/exec',
 - [ ] 시트에서 그 줄의 D열 체크가 풀리고 F열에 시각이 찍혔다
 - [ ] 남의 학번을 넣으면 "학번이 일치하지 않아요"가 뜬다
 - [ ] 관리자: 시트에서 아무 글의 D열 체크를 풀면 사이트에서 사라진다
+- [ ] 글의 따봉을 누르면 숫자가 바로 오르고, 시트 G열 숫자도 같이 바뀐다. 다시 누르면 취소된다
+- [ ] 새로고침해도 내가 누른 따봉은 보라색으로 채워져 있다
+- [ ] 공감 2개 이상인 글이 홈의 '친구들의 한마디'에 섞여 나온다
 - [ ] 오른쪽 위에서 English로 바꿨을 때 모든 문구가 영어로 바뀐다
 - [ ] 휴대폰에서 열었을 때 레이아웃이 깨지지 않는다
 - [ ] BGM이 흐르고, 음량 슬라이더가 동작한다
@@ -143,7 +147,9 @@ GitHub 저장소에서 파일을 클릭 → 연필 아이콘 → 고치고 → C
 | 누가 참여했는지 보기 | 시트 **E열(학번)** 확인 |
 | 마감일 바꾸기 | `config.js`의 `END_DATE` **와** `Code.gs`의 `END_DATE` **둘 다** 고치고 → Code.gs 새 버전 배포 |
 | 방문자 수 손보기 | `config.js`의 `BASE_TOTAL` 숫자 수정 |
-| 미니룸 캐릭터 위치 조정 | 주소 뒤에 `?debug=1` 붙이고 그림 클릭 → 나온 좌표를 `config.js`의 `MINIMI.spots`에 입력 |
+| 공감 수 손보기 | 시트 **G열** 숫자를 직접 고치면 바로 반영 |
+| 한마디에 섞을 인기 글 기준 | `config.js`의 `POPULAR_MIN_LIKES`(최소 공감 수), `POPULAR_COUNT`(몇 개) |
+| 내 방 캐릭터 위치 조정 | 주소 뒤에 `?debug=1` 붙이고 그림 클릭 → 나온 좌표를 `config.js`의 `MINIMI.spots`에 입력 |
 | 고친 내용이 방문자에게 안 보일 때 | 아래 **7. 캐시 버전 바꾸기** 참고 |
 | 저장소 이름을 바꿨을 때 | `index.html`의 `og:url` · `og:image` · `twitter:image` 주소 3곳을 새 주소로 |
 | 미리보기 카드가 옛날 그림으로 뜰 때 | 아래 **9. 링크 미리보기** 참고 (카톡 캐시 초기화) |
@@ -211,7 +217,7 @@ PROFILE_IMAGE: 'assets/profile.webp?v=2',
 | `index.html`의 `<meta name="robots" content="noindex, nofollow">` | 방명록에 남긴 글이 검색 결과에 뜨지 않게 |
 | `robots.txt`에서 크롤링을 막지 **않음** | 막아버리면 검색엔진이 위의 noindex 표시를 읽지 못해서 오히려 역효과 |
 | 서버 요청에 12~15초 시간 제한 | Apps Script가 멈춰도 화면이 '불러오는 중'에서 굳지 않게. 실패하면 '다시 시도' 버튼이 나옴 |
-| `padding-top` + `@supports`로 미니룸 높이 | `aspect-ratio`를 모르는 옛 기기(iOS 14 이하)에서 미니룸이 통째로 사라지는 걸 막음 |
+| `padding-top` + `@supports`로 내 방 그림 높이 | `aspect-ratio`를 모르는 옛 기기(iOS 14 이하)에서 내 방 그림이 통째로 사라지는 걸 막음 |
 | `app.js` 맨 위의 `replaceChildren` 보완 코드 | 같은 옛 기기에서 화면이 아예 안 그려지는 걸 막음 |
 | 파일 이름은 영문 소문자 + 숫자만 | GitHub Pages는 대소문자를 구분해서, 한 글자만 달라도 이미지가 안 뜸 |
 | 미리보기 그림은 WebP가 아니라 PNG | 카카오톡이 WebP 미리보기를 제대로 못 읽음 |
@@ -222,8 +228,8 @@ PROFILE_IMAGE: 'assets/profile.webp?v=2',
 
 `index.html`에 Open Graph 태그가 들어 있어서, 주소만 붙여넣어도 그림 카드가 떠.
 
-- 그림: `assets/og-image.png` (1200×630, 249KB)
-- 제목: 태재디지털도서관의 미니홈피
+- 그림: `assets/og-image.png` (1200×630, 253KB. 2026.10.11 모니터가 생긴 방 그림으로 다시 만듦)
+- 제목: 태재디지털도서관의 홈피
 - 설명: 2023~2026 고마웠어! 기존 홈페이지에게 마지막 인사를 남겨주세요
 
 ### 올린 뒤 확인하는 법

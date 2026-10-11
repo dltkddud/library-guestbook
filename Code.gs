@@ -12,10 +12,12 @@
               (+ 방문자 수 세기)
      doPost : action='post'   → 검사 후 시트에 한 줄 추가
               action='delete' → 글 번호와 학번이 맞으면 그 글을 안 보이게 함(본인 삭제)
+              action='like'   → 글의 공감 수를 +1 또는 -1 (보이는 글만, 글당 1분에 20번까지)
    시트 구조 (탭 이름: guestbook)
-     A timestamp | B nickname | C message | D visible(체크박스) | E studentId | F deletedAt
+     A timestamp | B nickname | C message | D visible(체크박스) | E studentId | F deletedAt | G likes
      ※ E열(학번)은 이 시트에만 남고, 사이트 화면이나 서버 응답(JSON)에는 절대 나가지 않음.
-       목록을 읽을 때 A~D열만 읽기 때문에 구조적으로 샐 수 없음.
+       목록을 읽을 때 A~D열과 G열만 따로 읽기 때문에 구조적으로 샐 수 없음.
+     ※ G열(likes)이 비어 있는 예전 글은 공감 0개로 봄.
    운영 방법
      - 문제 있는 글: D열 체크를 해제하면 사이트에서 사라짐 (원본은 시트에 남음)
      - 본인이 지운 글도 똑같이 D열 체크만 풀리고, F열에 지운 시각이 적힘 (행은 남음)
@@ -35,6 +37,9 @@ const STUDENT_ID_RE = new RegExp('^[0-9]{' + STUDENT_ID_DIGITS + '}$');
 // 글 하나당 학번이 DELETE_MAX_FAIL번 틀리면 DELETE_LOCK_MINUTES 동안 그 글의 삭제를 잠금.
 const DELETE_MAX_FAIL = 10;
 const DELETE_LOCK_MINUTES = 60;
+// 공감(따봉)
+const LIKES_COL = 7;              // G열. 시트 열 구성을 바꾸면 이 숫자도 같이 바꾸기
+const LIKE_LIMIT_PER_MIN = 20;    // 글 하나당 1분(시계 기준 1분 단위)에 반영되는 공감 누르기·취소 횟수 상한 (조작 방지)
 const TIMEZONE = 'Asia/Seoul'; // TODAY 방문자 수를 한국 날짜 기준으로 셈
 
 
@@ -66,6 +71,7 @@ function doPost(e) {
   const action = String(body.action || 'post');
   if (action === 'post') return handlePost_(body);
   if (action === 'delete') return handleDelete_(body);
+  if (action === 'like') return handleLike_(body);
   return json_({ ok: false, error: 'BAD_REQUEST' });
 }
 
@@ -90,7 +96,8 @@ function handlePost_(body) {
     // 앞에 붙인 ' 는 "글자 그대로 저장"하라는 표시.
     // 없으면 "=..."로 시작하는 글은 수식으로, "10/5"는 날짜로 바뀌어 버림. 시트 화면엔 ' 가 안 보여.
     // 학번은 E열에만 저장 (앞의 0이 사라지지 않게 ' 를 붙여 글자로 저장)
-    sheet.appendRow([new Date(), "'" + nickname, "'" + message, true, "'" + studentId]);
+    // F열(deletedAt)은 비워두고, G열(likes)은 공감 0개로 시작
+    sheet.appendRow([new Date(), "'" + nickname, "'" + message, true, "'" + studentId, '', 0]);
     sheet.getRange(sheet.getLastRow(), 4).insertCheckboxes().check(); // D열을 체크된 체크박스로
   } finally {
     lock.releaseLock();
@@ -139,6 +146,57 @@ function handleDelete_(body) {
   return json_({ ok: true });
 }
 
+// 공감(따봉): 글 번호(no)의 G열 숫자를 delta(+1 누르기 / -1 취소)만큼 바꿈.
+// 누가 눌렀는지는 서버에 남기지 않음(익명). 한 사람이 한 번만 누르게 하는 건 사이트(브라우저) 쪽에서 하고,
+// 서버는 주소로 직접 마구 보내는 조작을 막기 위해 "글 하나당 1분에 20번"까지만 받아줌.
+function handleLike_(body) {
+  const no = Number(body.no);
+  const delta = Number(body.delta);
+  if (delta !== 1 && delta !== -1) return json_({ ok: false, error: 'BAD_REQUEST' });
+  if (!(no >= 1) || no !== Math.floor(no)) return json_({ ok: false, error: 'LIKE_GONE' });
+
+  // 여러 명이 동시에 눌러도 "읽고 → 더하고 → 쓰기"가 섞이지 않게 잠금
+  const lock = LockService.getScriptLock();
+  if (!lock.tryLock(5000)) return json_({ ok: false, error: 'BUSY' });
+  try {
+    const sheet = getSheet_();
+    const row = no + 1; // 1행이 제목줄이라 "글 번호 + 1"이 실제 시트 줄 번호
+    if (row > sheet.getLastRow()) return json_({ ok: false, error: 'LIKE_GONE' });
+
+    // A~D열만 읽어서 보이는 글인지 확인 (E열 학번은 읽지 않음)
+    const values = sheet.getRange(row, 1, 1, 4).getValues()[0];
+    if (!values[1] && !values[2]) return json_({ ok: false, error: 'LIKE_GONE' }); // 빈 줄
+    if (!isVisible_(values[3])) return json_({ ok: false, error: 'LIKE_GONE' });   // 숨김·삭제된 글
+
+    if (!takeLikeQuota_(no)) return json_({ ok: false, error: 'LIKE_LIMIT' });
+
+    const cell = sheet.getRange(row, LIKES_COL);
+    const likes = Math.max(0, toLikes_(cell.getValue()) + delta); // 0 아래로는 안 내려감
+    cell.setValue(likes);
+    return json_({ ok: true, likes: likes });
+  } finally {
+    lock.releaseLock();
+  }
+}
+
+// 글 하나당 1분에 LIKE_LIMIT_PER_MIN번까지만 허용. 넘으면 false.
+// 숫자는 CacheService(잠깐 쓰고 버리는 저장소)에 "글번호 + 몇 번째 분"을 이름으로 저장 → 2분 뒤 저절로 사라짐.
+// 잠금(lock) 안에서만 불러서, 동시에 눌러도 횟수가 정확하게 셈.
+function takeLikeQuota_(no) {
+  const cache = CacheService.getScriptCache();
+  const key = 'like_' + no + '_' + Math.floor(Date.now() / 60000);
+  const count = Number(cache.get(key) || 0);
+  if (count >= LIKE_LIMIT_PER_MIN) return false;
+  cache.put(key, String(count + 1), 120);
+  return true;
+}
+
+// G열 값을 숫자로 (비어 있거나 이상한 값이면 0)
+function toLikes_(value) {
+  const n = Math.floor(Number(value));
+  return n > 0 ? n : 0;
+}
+
 /* ---------- 3. 시트 읽기 ---------- */
 
 // 체크(visible)된 글만 골라 최신순으로 정리
@@ -149,6 +207,8 @@ function listEntries_() {
 
   // A~D열만 읽음. E열(학번)은 아예 읽지 않으니 응답에 섞여 나갈 수 없음.
   const rows = sheet.getRange(2, 1, lastRow - 1, 4).getValues();
+  // 공감 수는 G열만 따로 읽음 (E·F열을 건너뛰려고 한 번에 읽지 않음)
+  const likeRows = sheet.getRange(2, LIKES_COL, lastRow - 1, 1).getValues();
   const entries = [];
   rows.forEach(function (row, i) {
     const timestamp = row[0], nickname = row[1], message = row[2], visible = row[3];
@@ -159,6 +219,7 @@ function listEntries_() {
       nickname: String(nickname),
       message: String(message),
       createdAt: timestamp instanceof Date ? timestamp.toISOString() : String(timestamp),
+      likes: toLikes_(likeRows[i][0]),   // 공감 수
     });
   });
   return entries.reverse(); // 최신 글이 위로

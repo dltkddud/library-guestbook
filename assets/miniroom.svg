@@ -1,6 +1,6 @@
-<!-- 미니룸 그림 (원본 도트 일러스트, 코드로 생성). 글자(말풍선, 박스 라벨)는 app.js가 언어에 맞게 바꿔 넣음 -->
+<!-- 내 방 그림 (원본 도트 일러스트, 코드로 생성). 글자(말풍선, 박스 라벨)는 app.js가 언어에 맞게 바꿔 넣음 -->
 <svg class="miniroom-svg" viewBox="0 14 360 252" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="miniroom-title" shape-rendering="crispEdges">
-<title id="miniroom-title" data-i18n="roomAlt">이삿짐을 싸고 있는 도서관 미니룸</title>
+<title id="miniroom-title" data-i18n="roomAlt">이삿짐을 싸고 있는 도서관의 방</title>
 <polygon points="180.0,100.0 20.0,180.0 20.0,80.0 180.0,0.0" fill="#ECE4F6" stroke="#3B1563" stroke-width="0.8" />
 <polygon points="180.0,100.0 340.0,180.0 340.0,80.0 180.0,0.0" fill="#DFF3F0" stroke="#3B1563" stroke-width="0.8" />
 <polygon points="180.0,100.0 20.0,180.0 20.0,158.0 180.0,78.0" fill="#DCCFEC" stroke="#3B1563" stroke-width="0.6" />
