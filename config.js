@@ -9,7 +9,7 @@
 const CONFIG = {
   // [필수] Apps Script 웹 앱 URL (/exec로 끝나는 주소)
   // 비어 있으면 "데모 모드": 시트 없이 가짜 방명록으로 화면만 확인할 수 있어.
-  API_URL: 'https://script.google.com/macros/s/AKfycbwGxjL7gyjLyTk3BXqOjC_UEkMHea-wA9RBNXBqvyMFO-rOBuUSPsr3lzpvv4N_CM6u/exec', // TODO: 예) 'https://script.google.com/macros/s/AKfy.../exec'
+  API_URL: 'https://script.google.com/macros/s/AKfycbxa9BvMLUR9XbaYvu6EB2h-DkivskZPBx0hg5RakkFs7palei7kM9X4qO0I8eu7bx0v1A/exec', // TODO: 예) 'https://script.google.com/macros/s/AKfy.../exec'
 
   // 방명록 마감 시각 (한국 시간). 지나면 입력창과 '삭제' 버튼만 닫히고, 남긴 글은 계속 보여.
   // ※ Code.gs의 END_DATE와 반드시 같은 값으로 맞춰야 해.
