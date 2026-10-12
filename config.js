@@ -58,6 +58,7 @@ const CONFIG = {
     // 새 홈페이지의 첫 일기
     {
       date: '2026.10.12',
+      image: 'assets/newsite1.webp', // 새 홈페이지 첫 화면 (사진첩 '새 홈페이지 둘러보기' 첫 장과 같은 그림)
       ko: {
         title: '새 홈페이지의 첫 일기',
         body: [
@@ -71,6 +72,8 @@ const CONFIG = {
           '앞으로 잘 부탁해!',
         ],
         sign: '태재디지털도서관 새 홈페이지가',
+        photoAlt: '새로 바뀐 태재디지털도서관 홈페이지 첫 화면',
+        photoCaption: '새로 단장한 내 첫 화면이야. 자주 놀러 와 ★',
       },
       en: {
         title: "The new homepage's first diary entry",
@@ -85,6 +88,8 @@ const CONFIG = {
           'Looking forward to being with you!',
         ],
         sign: 'With love, the new library homepage',
+        photoAlt: 'Front page of the renewed Taejae Digital Library homepage',
+        photoCaption: 'My freshly redone front page. Come visit often ★',
       },
     },
 
